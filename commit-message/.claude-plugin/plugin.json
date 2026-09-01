@@ -1,0 +1,7 @@
+{
+  "name": "commit-message",
+  "description": "Generate a clear, conventional commit message from a git diff. Use when writing a commit message, reviewing staged changes, or fixing an existing message that doesn't follow the rules.",
+  "author": {
+    "name": "India Amos"
+  }
+}

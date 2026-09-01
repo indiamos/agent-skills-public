@@ -1,0 +1,7 @@
+{
+  "name": "story-retro",
+  "description": "Retrospective analysis of completed tracked tickets (Jira, Linear, ...). Use when a developer or team lead wants to learn from completed work by comparing original ticket scope to final implementation.",
+  "author": {
+    "name": "India Amos"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "improve-skill",
+  "description": "Use when you want to audit an existing skill or command file against the instruction pattern catalog \u2014 vague skip criteria, missing STOP gates, absent output format specs, undefined scoring rubrics, no preview-before-write step.",
+  "author": {
+    "name": "India Amos"
+  },
+  "dependencies": [
+    "catalog-instruction-patterns"
+  ]
+}

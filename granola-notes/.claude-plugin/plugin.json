@@ -1,0 +1,7 @@
+{
+  "name": "granola-notes",
+  "description": "Fetch meeting notes and transcripts from Granola (granola.ai) via its REST API. Use when: pulling up a recent Granola meeting note, searching for a transcript, or referencing what was discussed in a recorded meeting.",
+  "author": {
+    "name": "India Amos"
+  }
+}

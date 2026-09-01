@@ -1,0 +1,7 @@
+{
+  "name": "mine-pr-conventions",
+  "description": "Use when you want to discover coding conventions, recurring mistakes, and design patterns from a GitHub repo's PR review history \u2014 to update CLAUDE.md, a spec-kit constitution, or a PR review checklist. Accepts any GitHub owner/repo and PR range.",
+  "author": {
+    "name": "India Amos"
+  }
+}

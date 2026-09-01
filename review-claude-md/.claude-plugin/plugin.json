@@ -1,0 +1,7 @@
+{
+  "name": "review-claude-md",
+  "description": "Review recent changes and suggest CLAUDE.md updates. Use when: CLAUDE.md feels stale, after a sprint of new patterns, after adding commands or tools, preparing for a new project phase. Optionally pass a focus area (e.g., 'testing patterns', 'new commands').",
+  "author": {
+    "name": "India Amos"
+  }
+}

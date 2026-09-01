@@ -1,0 +1,7 @@
+{
+  "name": "estimate-tickets",
+  "description": "Use when sizing or estimating one or more tickets before grooming or sprint planning\u2014e.g., 'estimate this ticket', 'how complex is this', 'size STR-173'. Fetches from Linear, Jira, GitHub Issues, or Shortcut, scores on a fixed Fibonacci scale (1, 2, 3, 5, 8), and flags ambiguous scope and undeclared dependencies for grooming discussion. Read-only against the tracker; writes a local Markdown file only.",
+  "author": {
+    "name": "India Amos"
+  }
+}

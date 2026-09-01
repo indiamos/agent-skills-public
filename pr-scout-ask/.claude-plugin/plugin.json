@@ -1,0 +1,7 @@
+{
+  "name": "pr-scout-ask",
+  "description": "Run after /pr-scout to convert a review file into question-framed comments \u2014 use when you want to send feedback as genuine questions rather than findings, so the PR author feels invited to explain rather than defend.",
+  "author": {
+    "name": "India Amos"
+  }
+}

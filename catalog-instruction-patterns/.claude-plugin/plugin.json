@@ -1,0 +1,7 @@
+{
+  "name": "catalog-instruction-patterns",
+  "description": "Use when you want to extract a reusable catalog of instruction patterns from a set of skill or command files \u2014 to inform writing new skills, auditing existing ones, or building a style guide for skill authors. Accepts any list of files or directories.",
+  "author": {
+    "name": "India Amos"
+  }
+}

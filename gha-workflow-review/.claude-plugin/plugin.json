@@ -1,0 +1,7 @@
+{
+  "name": "gha-workflow-review",
+  "description": "Review GitHub Actions workflow files for common migration and correctness issues. Use when a repo just migrated from CircleCI to GHA, when a workflow file was added or modified, or when the user asks to audit/review workflow files. Catches: missing CI jobs, broken deploy gates, wrong secret names, permissions gaps, missing Helm steps, bad Go CI patterns, and Slack notification gaps.",
+  "author": {
+    "name": "India Amos"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "generate-pr-description",
+  "description": "Use when generating a PR description for a feature branch.",
+  "author": {
+    "name": "India Amos"
+  }
+}

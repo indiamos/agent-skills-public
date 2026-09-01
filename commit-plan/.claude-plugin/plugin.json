@@ -1,0 +1,7 @@
+{
+  "name": "commit-plan",
+  "description": "Plan and organize uncommitted changes into a logical series of well-formatted commits. Use this skill whenever the user has multiple uncommitted changes they want to structure, asks to \"plan commits\", \"organize my changes into commits\", \"group my work into commits\", \"draft commit plan\", or wants help breaking a messy working directory into a clean, reviewable history. Also trigger when the user has finished a feature or bug fix and wants to commit their work in a structured way before pushing.",
+  "author": {
+    "name": "India Amos"
+  }
+}

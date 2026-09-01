@@ -1,0 +1,7 @@
+{
+  "name": "cross-check-review",
+  "description": "Cross-check a pr-scout review to decide which findings are worth flagging to the PR author. Use when reviewing someone else's PR \u2014 automatically adopts assessor perspective instead of implementor. Falls through to superpowers:receiving-code-review when the PR author is the authenticated GitHub user.",
+  "author": {
+    "name": "India Amos"
+  }
+}

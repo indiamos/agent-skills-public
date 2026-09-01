@@ -1,0 +1,94 @@
+{
+  "name": "indiamos-skills",
+  "owner": {
+    "name": "India Amos"
+  },
+  "description": "A curated collection of Claude Code skills.",
+  "plugins": [
+    {
+      "name": "catalog-instruction-patterns",
+      "description": "Use when you want to extract a reusable catalog of instruction patterns from a set of skill or command files \u2014 to inform writing new skills, auditing existing ones, or building a style guide for skill authors. Accepts any list of files or directories.",
+      "source": "./catalog-instruction-patterns"
+    },
+    {
+      "name": "commit-message",
+      "description": "Generate a clear, conventional commit message from a git diff. Use when writing a commit message, reviewing staged changes, or fixing an existing message that doesn't follow the rules.",
+      "source": "./commit-message"
+    },
+    {
+      "name": "commit-plan",
+      "description": "Plan and organize uncommitted changes into a logical series of well-formatted commits. Use this skill whenever the user has multiple uncommitted changes they want to structure, asks to \"plan commits\", \"organize my changes into commits\", \"group my work into commits\", \"draft commit plan\", or wants help breaking a messy working directory into a clean, reviewable history. Also trigger when the user has finished a feature or bug fix and wants to commit their work in a structured way before pushing.",
+      "source": "./commit-plan"
+    },
+    {
+      "name": "cross-check-review",
+      "description": "Cross-check a pr-scout review to decide which findings are worth flagging to the PR author. Use when reviewing someone else's PR \u2014 automatically adopts assessor perspective instead of implementor. Falls through to superpowers:receiving-code-review when the PR author is the authenticated GitHub user.",
+      "source": "./cross-check-review"
+    },
+    {
+      "name": "dep-scout",
+      "description": "Use when reviewing a dependency-bump PR (dependabot, renovate, or human-authored security fix). Produces a traffic-light safety verdict with per-package changelog analysis, CI status, and security scan history. Invoke with a PR number or URL.",
+      "source": "./dep-scout"
+    },
+    {
+      "name": "estimate-tickets",
+      "description": "Use when sizing or estimating one or more tickets before grooming or sprint planning\u2014e.g., 'estimate this ticket', 'how complex is this', 'size STR-173'. Fetches from Linear, Jira, GitHub Issues, or Shortcut, scores on a fixed Fibonacci scale (1, 2, 3, 5, 8), and flags ambiguous scope and undeclared dependencies for grooming discussion. Read-only against the tracker; writes a local Markdown file only.",
+      "source": "./estimate-tickets"
+    },
+    {
+      "name": "export-full",
+      "description": "Export a Claude Code conversation from its raw JSONL session file to a human-readable transcript matching the /export format. Use when the user wants to export a conversation (current or past), convert a session JSONL, or create a detailed transcript that includes compacted history.",
+      "source": "./export-full"
+    },
+    {
+      "name": "generate-pr-description",
+      "description": "Use when generating a PR description for a feature branch.",
+      "source": "./generate-pr-description"
+    },
+    {
+      "name": "gha-workflow-review",
+      "description": "Review GitHub Actions workflow files for common migration and correctness issues. Use when a repo just migrated from CircleCI to GHA, when a workflow file was added or modified, or when the user asks to audit/review workflow files. Catches: missing CI jobs, broken deploy gates, wrong secret names, permissions gaps, missing Helm steps, bad Go CI patterns, and Slack notification gaps.",
+      "source": "./gha-workflow-review"
+    },
+    {
+      "name": "granola-notes",
+      "description": "Fetch meeting notes and transcripts from Granola (granola.ai) via its REST API. Use when: pulling up a recent Granola meeting note, searching for a transcript, or referencing what was discussed in a recorded meeting.",
+      "source": "./granola-notes"
+    },
+    {
+      "name": "hoist-permissions",
+      "description": "Run the permissions hoister script and report the results. Use when: updating tool permissions, reviewing current permission settings, after adding new tool allowances.",
+      "source": "./hoist-permissions"
+    },
+    {
+      "name": "improve-skill",
+      "description": "Use when you want to audit an existing skill or command file against the instruction pattern catalog \u2014 vague skip criteria, missing STOP gates, absent output format specs, undefined scoring rubrics, no preview-before-write step.",
+      "source": "./improve-skill"
+    },
+    {
+      "name": "mine-pr-conventions",
+      "description": "Use when you want to discover coding conventions, recurring mistakes, and design patterns from a GitHub repo's PR review history \u2014 to update CLAUDE.md, a spec-kit constitution, or a PR review checklist. Accepts any GitHub owner/repo and PR range.",
+      "source": "./mine-pr-conventions"
+    },
+    {
+      "name": "pr-scout",
+      "description": "Use when you want a thorough code review of a PR \u2014 checking for bugs, CLAUDE.md compliance, historical context, and struct invariants. Invoke with a PR number or URL; optionally pass a file path (e.g., file:/path/to/review.md) to write the result to a file instead of posting a GitHub comment.",
+      "source": "./pr-scout"
+    },
+    {
+      "name": "pr-scout-ask",
+      "description": "Run after /pr-scout to convert a review file into question-framed comments \u2014 use when you want to send feedback as genuine questions rather than findings, so the PR author feels invited to explain rather than defend.",
+      "source": "./pr-scout-ask"
+    },
+    {
+      "name": "review-claude-md",
+      "description": "Review recent changes and suggest CLAUDE.md updates. Use when: CLAUDE.md feels stale, after a sprint of new patterns, after adding commands or tools, preparing for a new project phase. Optionally pass a focus area (e.g., 'testing patterns', 'new commands').",
+      "source": "./review-claude-md"
+    },
+    {
+      "name": "story-retro",
+      "description": "Retrospective analysis of completed tracked tickets (Jira, Linear, ...). Use when a developer or team lead wants to learn from completed work by comparing original ticket scope to final implementation.",
+      "source": "./story-retro"
+    }
+  ]
+}

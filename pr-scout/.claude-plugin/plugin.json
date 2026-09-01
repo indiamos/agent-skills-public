@@ -1,0 +1,7 @@
+{
+  "name": "pr-scout",
+  "description": "Use when you want a thorough code review of a PR \u2014 checking for bugs, CLAUDE.md compliance, historical context, and struct invariants. Invoke with a PR number or URL; optionally pass a file path (e.g., file:/path/to/review.md) to write the result to a file instead of posting a GitHub comment.",
+  "author": {
+    "name": "India Amos"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "dep-scout",
+  "description": "Use when reviewing a dependency-bump PR (dependabot, renovate, or human-authored security fix). Produces a traffic-light safety verdict with per-package changelog analysis, CI status, and security scan history. Invoke with a PR number or URL.",
+  "author": {
+    "name": "India Amos"
+  }
+}

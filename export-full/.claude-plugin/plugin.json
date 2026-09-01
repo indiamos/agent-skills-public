@@ -1,0 +1,7 @@
+{
+  "name": "export-full",
+  "description": "Export a Claude Code conversation from its raw JSONL session file to a human-readable transcript matching the /export format. Use when the user wants to export a conversation (current or past), convert a session JSONL, or create a detailed transcript that includes compacted history.",
+  "author": {
+    "name": "India Amos"
+  }
+}

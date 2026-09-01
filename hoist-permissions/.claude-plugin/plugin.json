@@ -1,0 +1,7 @@
+{
+  "name": "hoist-permissions",
+  "description": "Run the permissions hoister script and report the results. Use when: updating tool permissions, reviewing current permission settings, after adding new tool allowances.",
+  "author": {
+    "name": "India Amos"
+  }
+}
