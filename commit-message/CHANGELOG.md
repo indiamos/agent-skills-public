@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01
+
+- Working-tree survey now also checks the current branch name for a ticket reference (e.g., `XYZ-123`) and uses it by default in the Ticket References step, instead of only asking the user
+
 ## 2026-08-14
 
 - Ticket reference wording generalized from "Jira ticket" to "tracked ticket (Jira, Linear, Shortcut, etc.)"

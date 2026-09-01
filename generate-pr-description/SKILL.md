@@ -24,8 +24,10 @@ Run `git fetch origin BRANCH` to ensure the ref is current. Then run all subsequ
 Read the following files in order using the Read tool (skip any that don't exist). For each key below, the last file that defines it wins. Do not use `echo` or any Bash command — env vars are not reliably injected into skill context.
 
 1. `~/.claude/settings.json` (user-level) `env` object
-2. `.claude/settings.json` relative to CWD (project-level) `env` object
-3. `.claude/settings.local.json` relative to CWD (project-local) `env` object
+2. For each directory from the filesystem root down to CWD (outermost first, CWD last — e.g., for CWD `~/repos/acme/widget-api` that's `~/repos`, `~/repos/acme`, `~/repos/acme/widget-api`), read `<dir>/.claude/settings.json` `env` object. This picks up a config set on a parent folder that contains multiple repos (e.g., an org-level `.claude/settings.json` shared by several nested client repos) as well as one set directly on the current repo.
+3. For the same directories in the same order, read `<dir>/.claude/settings.local.json` `env` object.
+
+Stop walking upward at the user's home directory (`~`) — do not read `.claude/settings.json` above it.
 
 Keys:
 

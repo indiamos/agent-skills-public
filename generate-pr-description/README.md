@@ -14,7 +14,7 @@ This skill lives in `~/.claude/skills/generate-pr-description/` and is available
 
 ### Configuration
 
-The skill is issue-tracker-agnostic. Set these in the `env` object of `~/.claude/settings.json` (user-level), `.claude/settings.json` (project-level), or `.claude/settings.local.json` (project-local — later files win):
+The skill is issue-tracker-agnostic. Set these in the `env` object of `~/.claude/settings.json` (user-level), or `.claude/settings.json` / `.claude/settings.local.json` in the current directory or any of its ancestors up to your home directory (project-level — checked outermost-first, so a config closer to the current directory wins). This means a `.claude/settings.json` on a parent folder that contains several repos (e.g., `~/repos/acme/.claude/settings.json`) is picked up automatically by every repo nested inside it, without needing its own copy:
 
 ```json
 {

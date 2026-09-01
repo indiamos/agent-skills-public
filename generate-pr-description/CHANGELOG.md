@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-01
+
+- Config resolution (`BASE_TICKET_URL`, `TICKET_LABEL`, `PR_DESC_OUTPUT_DIR`, `PR_DESC_DEFAULT_OUTPUT`) now walks up from the filesystem root to CWD, reading `.claude/settings.json` / `.claude/settings.local.json` in every ancestor directory (stopping at the home directory), not just CWD itself. Fixes a config set on a parent folder containing several repos being invisible to a repo nested inside it
+
 ## 2026-08-14
 
 - Removed Jira assumption: ticket link now built from `BASE_TICKET_URL` / `TICKET_LABEL` env vars (settings.json cascade, same pattern as `pr-scout`'s `PR_SCOUT_OUTPUT_DIR`), so Linear, Shortcut, GitHub Issues, or any tracker works without a local override

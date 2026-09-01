@@ -17,15 +17,18 @@ Generate consistent, informative commit messages inspired by the Conventional Co
 
 1. **Survey the working tree.** Do NOT assume changes are staged — VSCode commits all working changes by default, so the unstaged diff is often what the user wants to commit.
 
-   `<use_parallel_tool_calls>` Run the following three commands in a single parallel tool-call batch:
+   `<use_parallel_tool_calls>` Run the following four commands in a single parallel tool-call batch:
 
-   | Command              | Purpose                                        |
-   | -------------------- | ---------------------------------------------- |
-   | `git status --short` | Which files are staged, unstaged, or untracked |
-   | `git diff --staged`  | Staged diff                                    |
-   | `git diff`           | Unstaged diff                                  |
+   | Command                     | Purpose                                        |
+   | ---------------------------- | ---------------------------------------------- |
+   | `git status --short`        | Which files are staged, unstaged, or untracked |
+   | `git diff --staged`         | Staged diff                                    |
+   | `git diff`                  | Unstaged diff                                  |
+   | `git branch --show-current` | Current branch name, checked for a ticket ref  |
 
    If any command fails (e.g., not in a git repo, or git is unavailable), report the error and halt. If `git status --short` shows nothing staged but the working tree has changes, treat the unstaged + untracked changes as the intended commit scope.
+
+   Check the branch name for a ticket reference (e.g. `feature/XYZ-123-add-search` or `xyz-456/fix-login` → `XYZ-123`, `XYZ-456`). If found, use it as the default ticket reference in the Ticket References step below — no need to ask the user. If the diff or conversation already implies a different ticket, prefer that and note the discrepancy.
 
 2. **Identify the type** from the table below.
 3. **Draft the message** following the format and rules below.
@@ -77,6 +80,7 @@ Do NOT use scopes (e.g., `feat(auth):`). This project does not use them.
 ### Ticket References
 
 - When the work is associated with a tracked ticket (Jira, Linear, Shortcut, etc.), include the reference in square brackets at the end of the subject line (e.g., `[XYZ-123]`, `[ENG-456]`).
+- Check the current branch name (from step 1) for a ticket reference first — a pattern like `XYZ-123` or `xyz-123` anywhere in the branch name (e.g. `feature/XYZ-123-add-search`, `xyz-456/fix-login`) is a strong signal of the intended ticket. Use it by default rather than asking the user.
 - The ticket reference counts toward the 50-character limit.
 
 ### Body (when needed)
