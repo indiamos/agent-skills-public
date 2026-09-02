@@ -2,9 +2,21 @@
 
 A collection of [Claude Code](https://claude.com/claude-code) skills I've used in my work as a lead consulting software developer. Use them as-is or as a reference for writing your own.
 
-## Skills
+## Contents
 
-| Skill | Description |
+- [Skills included](#skills-included)
+- [Installing a skill](#installing-a-skill)
+  - [Manual install (no plugin system)](#manual-install-no-plugin-system)
+- [About this repo](#about-this-repo)
+  - [The context in which these skills were built](#the-context-in-which-these-skills-were-built)
+  - [Why these skills don't post your words for you](#why-these-skills-dont-post-your-words-for-you)
+- [Warning: You get what you pay for](#warning-you-get-what-you-pay-for)
+- [License](#license)
+- [Feedback](#feedback)
+
+## Skills included
+
+| Name | Description |
 | --- | --- |
 | [`catalog-instruction-patterns`](catalog-instruction-patterns) | Extract reusable patterns from skill files |
 | [`commit-message`](commit-message) | Generate a conventional commit message from a diff |
@@ -52,7 +64,7 @@ Or clone the whole repo somewhere and symlink individual skills into `~/.claude/
 
 This is a subset of a larger private skill collection that I use for everyday software development work as a consultant. Each skill here is self-contained (its own `SKILL.md`, `README.md`, `LICENSE`, and `CHANGELOG.md`) and _somewhat_ intended for use outside of any specific company or team. See each skill's own `README.md` for usage details and configuration.
 
-### The context these skills were built in
+### The context in which these skills were built
 
 I've worked at a small agile software consultancy since 2018, and I'm often—though not always—an outsider to the team, department, or company I'm working with. That shapes these skills in a few ways:
 
@@ -62,7 +74,7 @@ I've worked at a small agile software consultancy since 2018, and I'm often—th
 - **Portable over personal.** I usually work for one client at a time, but sometimes for a very short time. Sometimes I'm on hardware they supply, and sometimes on my consultancy's, so although I'm very opinionated about _some_ tools (it's extremely inefficient for me to use any IDE besides VSCode, at this point), a setup that travels well matters more to me than one that's deeply customized to a single machine or stack.
 - **Generalist, not specialist.** I switch tech stacks regularly, so you won't find much that's language-specific here. That said, most of these skills were drafted while I was working at a single client, and few have yet been extensively battle-tested outside that environment.
 
-### Why these skills don't write your words for you
+### Why these skills don't post your words for you
 
 I was an English major in college, and before I was a developer, I worked in and around publishing for years, writing both prose and code in a lot of non-technical contexts. I have strong opinions about language and how it's written, so most of these skills are deliberately built to _not_ post comments, reviews, issues, or PR descriptions on my behalf unless I explicitly ask them to.
 
