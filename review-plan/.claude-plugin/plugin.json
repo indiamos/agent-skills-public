@@ -1,0 +1,7 @@
+{
+  "name": "review-plan",
+  "description": "Use when reviewing a multi-task implementation plan \u2014 a Claude Code plan-mode plan or any saved markdown plan doc \u2014 before execution begins, or when the user asks to \"review this plan,\" \"check the plan for commit issues,\" or similar. Invoke with a path to the plan file.",
+  "author": {
+    "name": "India Amos"
+  }
+}

@@ -142,11 +142,11 @@ this conversation says. The only write this skill performs is the local Markdown
 
 ---
 
-## Step 1 — Fetch and analyze each ticket
+## Step 1 — Fetch and flag each ticket
 
 **State check:** `TICKET_URLS` is bound from Step 0b; `OUTPUT` is bound from Step 0c.
 
-If `TICKET_URLS` has exactly one entry, execute Steps 1a–1d inline (no subagent). If it has
+If `TICKET_URLS` has exactly one entry, execute Steps 1a–1c inline (no subagent). If it has
 more than one entry, dispatch one `general-purpose` subagent per ticket, all in a single
 parallel batch:
 
@@ -154,7 +154,9 @@ parallel batch:
 > independent; do not wait for one to finish before starting the next.
 
 Each subagent receives: `{ref, url, tracker}` for its ticket, and the MCP-availability flags
-from Step 0★. It returns the structured per-ticket result described in Step 1d.
+from Step 0★. It returns the structured per-ticket result described at the end of Step 1c.
+Scoring happens later, in Step 3, after Step 2 gives the requester a chance to resolve the
+ambiguities this step flags — a subagent here only fetches and flags, it doesn't estimate.
 
 **Read-only access — include this constraint verbatim in every subagent prompt:**
 
@@ -169,18 +171,22 @@ from Step 0★. It returns the structured per-ticket result described in Step 1d
 
 Use the method matching the ticket's tracker:
 
-| Tracker       | Primary fetch                                                                                                                            | Relationship / dependency signals                                                                                                                                                                            | If the MCP is unavailable                                                                                                                                                                                                                                                                                     |
+| Tracker       | Primary fetch                                                                                                                            | Relationship / hierarchy fetch (used in both 1b and 1c)                                                                                                                                                       | If the MCP is unavailable                                                                                                                                                                                                                                                                                     |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Linear        | Get the issue by ID or URL, including its full description, comments, labels, and any relations (parent, sub-issues, blocks/blocked-by). | Fetch the parent issue (if any) and sibling sub-issues (title + status only) for cross-referencing in Step 1c.                                                                                               | Ask the user to paste the ticket's title, description, and comments.                                                                                                                                                                                                                                          |
-| Jira          | Get the issue with all fields and changelog expanded.                                                                                    | Read the `issuelinks` field (blocks / is blocked by / relates to) and the epic/parent link.                                                                                                                  | Ask the user to paste the ticket's title, description, and comments.                                                                                                                                                                                                                                          |
-| GitHub Issues | Read the issue (title, body, comments, labels).                                                                                          | Fetch sub-issues and parent issue if the repo uses issue hierarchy; scan the body and comments for `#123`-style references and closing keywords (`Closes`, `Fixes`, `Resolves`, `Depends on`, `Blocked by`). | Fall back to `gh issue view <ref> --json title,body,comments,labels`. If that also fails (no `gh` auth, private repo), ask the user to paste the ticket's title, description, and comments — same terminal fallback as the other trackers, so the STOP gate below always has an ask-the-user path to exhaust. |
-| Shortcut      | Look for a Shortcut MCP tool in the current tool list and use it if present.                                                             | Same source, if the MCP exposes linked/blocking stories.                                                                                                                                                     | No MCP tool is available in most environments. Try `WebFetch` as a best-effort (note: this fails for authenticated pages per the WebFetch tool's own caveat). If that fails too, ask the user to paste the ticket's title, description, and comments.                                                         |
+| Linear        | Get the issue by ID or URL, including its full description, comments, labels, and any relations (parent, sub-issues, blocks/blocked-by). | Fetch the parent issue's full description and comments (if any), and sibling sub-issues (title + status only).                                                                                              | Ask the user to paste the ticket's title, description, and comments.                                                                                                                                                                                                                                          |
+| Jira          | Get the issue with all fields and changelog expanded.                                                                                    | Fetch the epic/parent issue's full description and comments via the epic/parent link, and read the `issuelinks` field (blocks / is blocked by / relates to).                                                | Ask the user to paste the ticket's title, description, and comments.                                                                                                                                                                                                                                          |
+| GitHub Issues | Read the issue (title, body, comments, labels).                                                                                          | Fetch the parent issue's full body and comments if the repo uses issue hierarchy, plus sub-issue titles; scan the body and comments for `#123`-style references and closing keywords (`Closes`, `Fixes`, `Resolves`, `Depends on`, `Blocked by`). | Fall back to `gh issue view <ref> --json title,body,comments,labels`. If that also fails (no `gh` auth, private repo), ask the user to paste the ticket's title, description, and comments — same terminal fallback as the other trackers, so the STOP gate below always has an ask-the-user path to exhaust. |
+| Shortcut      | Look for a Shortcut MCP tool in the current tool list and use it if present.                                                             | Same source, if the MCP exposes a parent story's full content and linked/blocking stories.                                                                                                                  | No MCP tool is available in most environments. Try `WebFetch` as a best-effort (note: this fails for authenticated pages per the WebFetch tool's own caveat). If that fails too, ask the user to paste the ticket's title, description, and comments.                                                         |
 | Other         | Ask the user how to fetch it (an MCP tool name to try, or paste the raw ticket text).                                                    | Description text only.                                                                                                                                                                                       | —                                                                                                                                                                                                                                                                                                             |
 
-**STOP gate (per ticket, inside its subagent if dispatched):** If the ticket cannot be fetched
-by any method above and the user has already been asked once without a usable answer, skip
-that ticket, note why, and continue with the others. Do not halt the whole run over one
-unfetchable ticket.
+This parent/epic fetch is a full read, not a title-only skim — it's the same depth as the
+ticket's own description, because Step 1b depends on actually being able to answer questions
+from it, not just detect its existence.
+
+**Unfetchable ticket (per ticket, inside its subagent if dispatched):** If the ticket cannot be
+fetched by any method above and the user has already been asked once without a usable answer,
+skip that ticket and note why in its result — this is a per-ticket skip, not a halt, so the
+other tickets in this run continue normally.
 
 ### 1b. Flag ambiguity for grooming
 
@@ -196,16 +202,29 @@ not a vague "this is unclear":
 - Scope language that could mean one thing or several (e.g., "update the relevant configs"
   without naming which ones)
 
+**Before adding anything to `AMBIGUITIES`, check whether the parent/epic ticket fetched above
+already answers it.** This is a forced check, not a judgment call to skip because the answer
+feels like it's probably deferred upward — actually read the parent's description and comments
+for the specific point in question, and check sibling sub-issue titles/status for a ticket that
+clearly owns it. If the parent (or a sibling) answers it, do not add it to `AMBIGUITIES` —
+instead record it in `PARENT_RESOLVED` as `{question, answer, source}`, where `source` is the
+parent/sibling ticket ID and the relevant section. Label it as resolved by ticket hierarchy, not
+assumed — e.g. "Answered by parent ACME-100: acceptance criteria there specify org-header-absent
+handling for the whole epic." Only what the parent doesn't cover falls through to the checks
+below.
+
 Do not flag these as ambiguities:
 
-- Detail intentionally deferred to a linked design doc, spec, or parent ticket — that's normal
-  scoping, not missing information
-- Wording any engineer on the team would resolve unambiguously from shared context (e.g., a
-  well-known internal service name used without elaboration)
+- Detail intentionally deferred to a linked design doc or spec (not the parent ticket — that
+  gets the forced check above, not a pass) — that's normal scoping, not missing information
+- A term or name used without definition that already appears, defined or used consistently,
+  elsewhere in this same ticket, its parent, or a linked doc — e.g., a service name the parent
+  ticket already names, or an abbreviation the ticket itself expands on first use
 - Standard boilerplate sections a ticket template always includes, even if sparsely filled in
 
-Store the list as `AMBIGUITIES` (may be empty). If empty, that's a real finding too — say so
-explicitly in the output rather than omitting the section.
+Store the list as `AMBIGUITIES` (may be empty) and `PARENT_RESOLVED` (may be empty). If
+`AMBIGUITIES` is empty, that's a real finding too — say so explicitly in the output rather than
+omitting the section.
 
 ### 1c. Detect dependencies — stated and unstated
 
@@ -228,9 +247,164 @@ Label these clearly as inferred, not confirmed — e.g. "Possible dependency (no
 the ticket): appears to need `<X>`, which `<OTHER-TICKET>` looks like it owns based on its
 title/description." Never present an inferred dependency as if the ticket stated it.
 
-Store as `DEPENDENCIES` split into `STATED` and `POSSIBLE` (either may be empty).
+**Classify every dependency found — stated or possible — as `sequencing` or `risk`:**
 
-### 1d. Estimate on the Fibonacci scale
+- **Sequencing:** the dependency's shape is already fully defined and stable; the only thing
+  outstanding is that it hasn't merged, deployed, or been picked up yet. You're waiting, not
+  exposed to rework.
+- **Risk:** the dependency's shape could still change before this ticket can be built against
+  it — a contract still under review, a spec not finalized, a decision the owning team hasn't
+  made yet.
+
+Apply this test: if the estimate would drop the moment the dependency merges or lands, with no
+other change, it's sequencing, not risk — a ready-state fact, not a complexity fact. Only risk
+carries weight in Step 4's estimate.
+
+For each dependency, store `{description, source, kind: sequencing|risk, reason}`, where
+`reason` is a one-line justification for the classification — e.g. "sequencing only — shape
+already fully defined in ACME-200" or "risk — PR is still under review, contract could shift."
+
+Store as `DEPENDENCIES` split into `STATED` and `POSSIBLE` (either may be empty), each entry
+carrying its `kind` and `reason`.
+
+Return `{ticket_id, title, tracker, url, ticket_context, ambiguities, parent_resolved,
+dependencies}` to the parent (or hold it in scope, if run inline). `ticket_context` is a compact
+digest — title, the acceptance-criteria points that bear on complexity, and any comment content
+relevant to scope — enough for Step 3 to estimate without re-fetching the ticket.
+
+Wait for all subagents to return before proceeding to Step 2 — do not act on partial results.
+
+**STOP gate:** If every ticket failed to fetch (Step 1a), report "All N ticket(s) failed to
+fetch — no report generated" along with each ticket's failure reason, and halt before writing
+any output file. If some tickets failed and others succeeded, proceed to Step 2 with the
+successful results, still including a failure section for each ticket that didn't (per Step 5's
+format).
+
+---
+
+## Step 2 — Check the codebase before asking the requester
+
+**State check:** `AMBIGUITIES` is bound per ticket from Step 1.
+
+Skip this step if every ticket's `AMBIGUITIES` is empty — go straight to Step 3. Many grooming
+questions are actually answerable from the repo(s) the requester is already sitting in — an
+existing pattern, a config value, a sibling endpoint's behavior, or the repo layout itself. Check
+those before bothering the requester with something the code already settles.
+
+### 2a. Resolve search scope (once — not per ticket)
+
+Run `pwd` to get `LAUNCH_DIR`. Then run `git -C "$LAUNCH_DIR" rev-parse --show-toplevel`:
+
+- **If it succeeds:** the requester launched from inside a single repo. `REPO_ROOTS = [<that
+  toplevel path>]`, `REPO_SCOPE = single-repo`.
+- **If it fails:** `LAUNCH_DIR` isn't itself a repo — it may be a folder of related repos (the
+  requester's other common pattern). List `LAUNCH_DIR`'s immediate subdirectories (one level
+  deep only, don't recurse further) and keep the ones containing a `.git` entry. If that list is
+  non-empty, `REPO_ROOTS = <that list>`, `REPO_SCOPE = multi-repo`.
+- **If neither applies:** `REPO_ROOTS = []`, `REPO_SCOPE = none`. Skip the rest of this step for
+  every ticket — there's nothing to search — and proceed to Step 3 with `AMBIGUITIES` unchanged.
+
+If `REPO_SCOPE = multi-repo` and there are more than ~20 sibling repos, don't blindly search all
+of them — narrow to the ones whose directory name plausibly matches a service/product-area term
+from the ticket titles or descriptions, and note in the output (Step 5) which repos were
+actually searched.
+
+### 2b. Search for answers, per ticket
+
+For each ticket with a non-empty `AMBIGUITIES`, and for each entry in it, judge whether the
+question has a code angle at all — "what does X currently do," "does Y already exist," "which
+service owns Z," "is there already a pattern for W," and even scope-boundary questions like
+"should this be split along service lines" (the repo's actual package/service boundaries are
+themselves evidence). Skip questions that are pure product or prioritization calls with no
+possible code answer (e.g., "should we do this before or after the other initiative").
+
+Search `REPO_ROOTS` with `Grep`/`Glob`/`Read` for: existing implementations, config values, or
+flags the question is asking about; comments (`TODO`, `FIXME`) or code referencing this ticket's
+ID; the repo/package boundaries relevant to a scope-splitting question; prior art from a similar
+feature that already settled the same "how should this behave" question. If there's more than
+one ticket, this can run as one `general-purpose` subagent per ticket, dispatched in parallel
+(same pattern as Step 1):
+
+> ⚡ **PARALLEL LAUNCH** — send all Task tool calls in one message if dispatching subagents here.
+
+Each dispatched subagent must return `{ticket_id, code_resolved, ambiguities}` to the parent —
+`code_resolved` is its ticket's `CODE_RESOLVED` list, `ambiguities` is what's left of that
+ticket's `AMBIGUITIES` after the search — so the parent can merge results without re-deriving
+which questions were answered.
+
+**Cap the effort at 3 targeted searches per question — this is a quick check, not an
+investigation.** If a question isn't answered within those 3 (e.g., 3 `Grep`/`Glob` calls
+covering different terms), mark it unresolved and move on — an unbounded search here is exactly
+the investigation Step 2 is meant to avoid.
+
+For any question the code answers with reasonable confidence, move it out of that ticket's
+`AMBIGUITIES` and into `CODE_RESOLVED` as `{question, answer, source}`, where `source` is the
+file path (and line number, where practical) backing the answer. Label these as inferred from
+the repo, not confirmed by the ticket or the requester — e.g. "Answered from code
+(`services/api/router.go:42`): the org header is already treated as absent when empty for the
+sibling `/v2/session` endpoint." Never present a code-derived answer as if the ticket or
+requester stated it. Anything the search can't resolve, or that has no code angle, stays in
+`AMBIGUITIES` unchanged.
+
+Store `CODE_RESOLVED` per ticket (may be empty).
+
+---
+
+## Step 3 — Check in on grooming questions before estimating
+
+**State check:** every ticket from Step 1 has returned, with `AMBIGUITIES` (possibly empty) and
+`DEPENDENCIES` bound per ticket; Step 2 has run (or been skipped), leaving `AMBIGUITIES` reduced
+by anything moved into `CODE_RESOLVED`.
+
+If every ticket's `AMBIGUITIES` list is empty, skip this step and go straight to Step 4 — there's
+nothing left to check in on.
+
+Otherwise, ask the requester about the outstanding questions before scoring anything, since
+they can often answer at least some of them on the spot — that's real signal, and asking first
+means the estimate doesn't have to be redone once grooming happens anyway. Present the
+questions grouped by ticket in one message, phrased as an invitation to answer what they
+already know rather than a blocker:
+
+```
+Before I estimate these, a few things came up that grooming would normally catch. Answer
+whatever you already know — anything left goes into the doc as a grooming item:
+
+ACME-173
+- What should happen when the org header is present but empty?
+
+ACME-175
+- Does "update the relevant configs" include the staging config, or prod only?
+```
+
+Skip re-asking about anything the requester already addressed earlier in this conversation
+(e.g., in their original request) — check before asking, don't make them repeat themselves.
+
+Wait for the requester's response before continuing. For each answer that resolves a listed
+question, move it out of that ticket's `AMBIGUITIES` and into `RESOLVED` as `{question,
+answer}`. Anything left unaddressed stays in `AMBIGUITIES` unchanged — a partial or absent
+response is a valid outcome, not a reason to re-ask.
+
+**A reply is not, by itself, permission to move to Step 4.** Answering some or even all of the
+questions is not the same as being done — the requester may still be mid-thought, may want to
+add more context, or may have follow-up questions of their own about what you found. Don't
+treat a substantive-looking reply as an implicit go-ahead. After incorporating whatever they
+said, check in explicitly: "Anything else on these, or should I go ahead and estimate?" and wait
+for a real answer. Only proceed to Step 4 once the requester gives an explicit go-ahead ("that's
+all," "go ahead," "proceed," etc.) — not merely because they replied. If they give more
+clarification instead, incorporate it the same way (updating `RESOLVED`/`AMBIGUITIES`, and
+re-running Step 2's codebase check on anything new worth checking) and ask again. This can
+repeat as many times as the requester needs; there's no cap on rounds, only on letting silence
+or a partial answer stand in for confirmation.
+
+Store `RESOLVED` per ticket (may be empty).
+
+---
+
+## Step 4 — Estimate each ticket
+
+**State check:** `ticket_context`, `AMBIGUITIES`, `PARENT_RESOLVED`, and `DEPENDENCIES` are
+bound per ticket from Step 1; `CODE_RESOLVED` is bound per ticket from Step 2 (empty if
+skipped); `RESOLVED` is bound per ticket from Step 3 (empty if skipped).
 
 Use only these five values: **1, 2, 3, 5, 8**. If a ticket's true scope reads larger than an 8,
 still return 8, but say explicitly that it should be split, and suggest where the split line
@@ -243,8 +417,15 @@ is. Never return 13 or higher.
 | **1** | Purely mechanical, no judgment required — e.g., literally duplicating a file/config and renaming identifiers, changing a UI copy string. A task any developer could do without thinking.                                                           |
 | **2** | Mechanical, but touches more than one place, or requires a small judgment call about what to keep vs. change. Still no real unknowns.                                                                                                              |
 | **3** | Mechanical work plus a genuine first-time-tooling or unfamiliar-system learning curve, and/or a verification loop (lint, tests, config validation) that commonly takes a couple of iterations. No open design decisions, no cross-team dependency. |
-| **5** | Real investigation or design ambiguity, a correctness/security-sensitive component with unknown-depth review, or a hard sequencing dependency on another ticket/team — but still fits in one bounded PR once the unknowns resolve.                 |
-| **8** | Multiple unresolved external decisions, production/infra blast radius, or several independent axes of uncertainty stacked together. Flag for splitting rather than treat as one unit of work.                                                      |
+| **5** | Real investigation or design ambiguity, a correctness/security-sensitive component with unknown-depth review, or **one genuine risk dependency** (its shape could still change) — but still fits in one bounded PR once that risk resolves.       |
+| **8** | Multiple unresolved external decisions, production/infra blast radius, or **several independent risk dependencies** stacked together — genuine uncertainty about what more than one thing will look like, not just when things will land.        |
+
+**Sequencing vs. risk — apply this before letting any dependency touch the score:** a
+dependency only earns weight in the estimate if it's classified `risk` in Step 1c. The test is
+the one from that step: if the estimate would drop the moment the dependency merges or lands,
+with no other change, it was never actually that number — it's sequencing, a ready-state fact,
+not a complexity fact. Stacking any number of `sequencing` dependencies never earns a 5 or an 8
+by itself; list them in the Dependencies section (Step 5) for planning, but don't cite them here.
 
 **Boundary cases:** if the ticket genuinely sits between two adjacent values and the evidence
 doesn't clearly favor one, choose the higher of the two — an underestimate costs more in
@@ -255,33 +436,36 @@ For each ticket, output:
 
 1. The chosen number.
 2. The concrete reasons for it — tie each reason to specifics in the ticket (acceptance
-   criteria, dev notes, referenced tickets), not generic statements.
+   criteria, dev notes, referenced tickets), to a `PARENT_RESOLVED`/`CODE_RESOLVED`/`RESOLVED`
+   answer from Step 1, 2, or 3, or to a `risk`-classified dependency, not generic statements.
 3. **Why not one notch lower** — what would have to be simpler, more known, or already decided
    for it to be that number.
 4. **Why not one notch higher** — what's absent (a design decision, a cross-team dependency, an
-   unresolved external unknown) that would push it up.
+   unresolved external unknown, an additional `risk` dependency) that would push it up. A
+   `sequencing` dependency is never the answer here.
 
-Base the estimate on `AMBIGUITIES` and `DEPENDENCIES` found above — heavy ambiguity or a real
-undeclared dependency is itself a reason to estimate higher, and should be named as such in the
-reasoning, not just listed separately.
+Base the estimate on the remaining `AMBIGUITIES` and on any `risk`-classified `DEPENDENCIES` —
+an answer captured in `PARENT_RESOLVED`, `CODE_RESOLVED`, or `RESOLVED` should lower or remove
+the uncertainty it addressed, while an unresolved `AMBIGUITIES` item or a `risk` dependency is
+itself a reason to estimate higher and should be named as such in the reasoning.
+`sequencing`-classified dependencies never raise the estimate, however many there are — say so
+explicitly if a ticket looks superficially blocked-heavy but every dependency turned out to be
+sequencing.
 
-Return `{ticket_id, title, tracker, url, estimate, estimate_reasoning, ambiguities, dependencies}`
-to the parent (or hold it in scope, if run inline).
+✅ "Two dependencies here: ACME-201 is sequencing only (shape fully defined, just not merged)
+and doesn't add to the score; the auth-service contract PR is genuine risk (still under review)
+and is the reason this is a 5, not a 3."
+❌ "Blocked on two things, so this is an 8." — stacks dependency count as if it were
+uncertainty, without checking whether either dependency is actually still undefined.
 
-Wait for all subagents to return before proceeding — do not compose output from partial results.
-
-**STOP gate:** If every ticket failed to fetch (Step 1a), report "All N ticket(s) failed to
-fetch — no report generated" along with each ticket's failure reason, and halt before writing
-any output file. If some tickets failed and others succeeded, proceed to Step 2 with the
-successful results, still including a failure section for each ticket that didn't (per Step 2's
-format).
+Store `ESTIMATE` and `ESTIMATE_REASONING` per ticket.
 
 ---
 
-## Step 2 — Compose the output document
+## Step 5 — Compose the output document
 
-**State check:** at least one ticket from Step 1 succeeded; all tickets have returned
-(successfully or as a noted failure).
+**State check:** at least one ticket from Step 1 succeeded; every successful ticket has an
+`ESTIMATE` from Step 4.
 
 Write the file at `OUTPUT` (from Step 0c) using this structure:
 
@@ -289,9 +473,6 @@ Write the file at `OUTPUT` (from Step 0c) using this structure:
 # Ticket Estimates — <TIMESTAMP>
 
 **Tickets**: <comma-separated ticket IDs>
-
-_This file is for personal reference only. Nothing in this run was written back to any issue
-tracker — no comments, no estimate fields, no status changes._
 
 ---
 
@@ -306,22 +487,35 @@ tracker — no comments, no estimate fields, no status changes._
 
 ### Needs grooming
 
-<If AMBIGUITIES is non-empty:>
+<If PARENT_RESOLVED is non-empty:>
+Answered by the ticket hierarchy:
+- <question> — <answer> (`<source ticket ID>`)
+
+<If CODE_RESOLVED is non-empty:>
+Answered from the codebase:
+- <question> — <answer> (`<source file:line>`)
+
+<If RESOLVED is non-empty:>
+Resolved before estimating:
+- <question> — <answer>
+
+<If remaining AMBIGUITIES is non-empty:>
 - [ ] <specific question 1>
 - [ ] <specific question 2>
 
-<If AMBIGUITIES is empty:>
+<If PARENT_RESOLVED, CODE_RESOLVED, RESOLVED, and AMBIGUITIES are all empty:>
 No ambiguities found — scope and acceptance criteria read as clear.
 
 ### Dependencies
 
 **Stated in the ticket:**
-<If STATED is non-empty, list each with its source. If empty:>
-None stated in the ticket.
+<If STATED is non-empty, list each in this form. If empty, write "None stated in the ticket.">
+- <description> (`<source>`) — **sequencing**, doesn't affect the score: <reason>
+- <description> (`<source>`) — **risk**, factored into the estimate above: <reason>
 
 **Possible — not declared in the ticket:**
-<If POSSIBLE is non-empty, list each with its reasoning and likely owning ticket. If empty:>
-None found.
+<If POSSIBLE is non-empty, list each the same way, plus its likely owning ticket. If empty,
+write "None found.">
 
 ---
 
@@ -347,13 +541,12 @@ or as a distinct case?"
 
 ---
 
-## Step 3 — Report back
+## Step 6 — Report back
 
-**State check:** the output file has been written to `OUTPUT` in Step 2.
+**State check:** the output file has been written to `OUTPUT` in Step 5.
 
 Tell the user where the file was written and give a one-line summary per ticket (estimate,
-whether grooming items or dependencies were flagged). Explicitly reaffirm: "Nothing was written
-back to the tracker — this file is local only."
+whether grooming items or dependencies were flagged).
 
 ---
 

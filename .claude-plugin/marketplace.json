@@ -86,6 +86,11 @@
       "source": "./review-claude-md"
     },
     {
+      "name": "review-plan",
+      "description": "Use when reviewing a multi-task implementation plan \u2014 a Claude Code plan-mode plan or any saved markdown plan doc \u2014 before execution begins, or when the user asks to \"review this plan,\" \"check the plan for commit issues,\" or similar. Invoke with a path to the plan file.",
+      "source": "./review-plan"
+    },
+    {
       "name": "story-retro",
       "description": "Retrospective analysis of completed tracked tickets (Jira, Linear, ...). Use when a developer or team lead wants to learn from completed work by comparing original ticket scope to final implementation.",
       "source": "./story-retro"

@@ -4,7 +4,7 @@ Estimate one or more tickets on a Fibonacci complexity scale, flagging what need
 
 ## Context
 
-Story points are usually estimated by gut feel during a meeting. This skill supports (BUT IS NOT MEANT AS A SUBSTITUTE FOR) human estimation, using the ticket text: it fetches the ticket (and its parent/siblings, for dependency context), estimates it against a Fibonacci scale with explicit anchors, and writes out *why*—including why it the estimate isn't one notch higher or lower. It also surfaces two things that often get missed until mid-sprint: acceptance criteria vague enough to need a refinement conversation, and dependencies on other tickets that aren't declared as a formal blocker.
+Story points are usually estimated by gut feel during a meeting. This skill supports (BUT IS NOT MEANT AS A SUBSTITUTE FOR) human estimation, using the ticket text: it fetches the ticket and, at full depth, its parent/epic (plus sibling titles/status for dependency context), estimates it against a Fibonacci scale with explicit anchors, and writes out *why*—including why it the estimate isn't one notch higher or lower. It also surfaces two things that often get missed until mid-sprint: acceptance criteria vague enough to need a refinement conversation, and dependencies on other tickets that aren't declared as a formal blocker.
 
 Works across Linear, Jira, GitHub Issues, and Shortcut. Which tracker a bare ticket ID belongs to is configurable per repo (see Configuration)—or just pass a full ticket URL, and it will be inferred automatically.
 
@@ -19,7 +19,7 @@ Works across Linear, Jira, GitHub Issues, and Shortcut. Which tracker a bare tic
 /estimate-tickets ACME-173 file:~/estimates/acme-173.md
 ```
 
-Pass one or more ticket references as bare IDs or full URLs. Mixed trackers are fine to use within the same run. Produces one Markdown file with a section per ticket: the estimate and reasoning, a refinement checklist of anything ambiguous, and a dependency list split into what the ticket states explicitly versus what looks like a dependency but isn't declared as one.
+Pass one or more ticket references as bare IDs or full URLs. Mixed trackers are fine to use within the same run. If a ticket has ambiguous scope, the skill checks three places for an answer, in order, before bothering you: the ticket's parent/epic (if it's linked via the tracker's native hierarchy—Linear parent/child, Jira epic link, GitHub sub-issues), then the repo(s) you launched it from—existing patterns, config values, sibling endpoints, the repo layout itself—then finally you, for whatever's still open. Answer what you already know and anything still open goes into the doc as a grooming item. Produces one Markdown file with a section per ticket: the estimate and reasoning, a refinement checklist noting what was answered by the parent ticket, what was answered from code, what you answered, and what's still open, and a dependency list split into what the ticket states explicitly versus what looks like a dependency but isn't declared as one.
 
 ## Configuration
 
@@ -51,10 +51,12 @@ Output filenames include a timestamp and the ticket ID(s)—e.g., `2026-08-14-11
 | 1 | Purely mechanical, no judgment—e.g., duplicate-and-rename, add a link, copy change. |
 | 2 | Mechanical but touches more than one place, or needs a small judgment call. |
 | 3 | Mechanical plus a first-time-tooling learning curve or a lint/test/config verification loop. No open design decisions. |
-| 5 | Real investigation or design ambiguity, a correctness or security-sensitive area, or a hard sequencing dependency—but potentially still one bounded PR. |
-| 8 | Multiple unresolved external decisions or infra blast radius stacked together; flag for splitting into smaller slices. |
+| 5 | Real investigation or design ambiguity, a correctness/security-sensitive area, or one genuine *risk* dependency (its shape could still change)—but potentially still one bounded PR. |
+| 8 | Multiple unresolved external decisions, infra blast radius, or several independent *risk* dependencies stacked together; flag for splitting into smaller slices. |
 
 Every estimate includes why that number was chosen and not the ones adjacent to it.
+
+**Dependencies only count if they're a genuine risk, not just a wait.** A dependency whose shape is already fully defined and just hasn't merged/landed yet is *sequencing*—it's a scheduling fact, not a complexity fact, and doesn't raise the score no matter how many of them stack up. A dependency whose contract, spec, or decision is still unsettled is *risk*, and that's what actually earns a 5 or 8. Both kinds are still listed in the Dependencies section for planning purposes; sequencing ones are just called out as not affecting the number.
 
 ---
 
