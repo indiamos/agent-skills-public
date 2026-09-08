@@ -270,14 +270,17 @@ carrying its `kind` and `reason`.
 Return `{ticket_id, title, tracker, url, ticket_context, ambiguities, parent_resolved,
 dependencies}` to the parent (or hold it in scope, if run inline). `ticket_context` is a compact
 digest — title, the acceptance-criteria points that bear on complexity, and any comment content
-relevant to scope — enough for Step 3 to estimate without re-fetching the ticket.
+relevant to scope — enough for Step 4 to estimate and Step 5 to recommend ticket edits without
+re-fetching the ticket. Keep every acceptance-criteria bullet, dev-note bullet, and context
+sentence that bears on complexity **verbatim, not paraphrased** — Step 5 needs to quote them
+exactly when proposing a reworded version.
 
 Wait for all subagents to return before proceeding to Step 2 — do not act on partial results.
 
 **STOP gate:** If every ticket failed to fetch (Step 1a), report "All N ticket(s) failed to
 fetch — no report generated" along with each ticket's failure reason, and halt before writing
 any output file. If some tickets failed and others succeeded, proceed to Step 2 with the
-successful results, still including a failure section for each ticket that didn't (per Step 5's
+successful results, still including a failure section for each ticket that didn't (per Step 6's
 format).
 
 ---
@@ -306,7 +309,7 @@ Run `pwd` to get `LAUNCH_DIR`. Then run `git -C "$LAUNCH_DIR" rev-parse --show-t
 
 If `REPO_SCOPE = multi-repo` and there are more than ~20 sibling repos, don't blindly search all
 of them — narrow to the ones whose directory name plausibly matches a service/product-area term
-from the ticket titles or descriptions, and note in the output (Step 5) which repos were
+from the ticket titles or descriptions, and note in the output (Step 6) which repos were
 actually searched.
 
 ### 2b. Search for answers, per ticket
@@ -425,7 +428,7 @@ dependency only earns weight in the estimate if it's classified `risk` in Step 1
 the one from that step: if the estimate would drop the moment the dependency merges or lands,
 with no other change, it was never actually that number — it's sequencing, a ready-state fact,
 not a complexity fact. Stacking any number of `sequencing` dependencies never earns a 5 or an 8
-by itself; list them in the Dependencies section (Step 5) for planning, but don't cite them here.
+by itself; list them in the Dependencies section (Step 6) for planning, but don't cite them here.
 
 **Boundary cases:** if the ticket genuinely sits between two adjacent values and the evidence
 doesn't clearly favor one, choose the higher of the two — an underestimate costs more in
@@ -462,10 +465,57 @@ Store `ESTIMATE` and `ESTIMATE_REASONING` per ticket.
 
 ---
 
-## Step 5 — Compose the output document
+## Step 5 — Recommend ticket edits to prevent re-asking
+
+**State check:** `ticket_context` is bound per ticket from Step 1; `PARENT_RESOLVED` is bound
+from Step 1, `CODE_RESOLVED` from Step 2, `RESOLVED` from Step 3 (each may be empty).
+
+Skip this step for any ticket where `PARENT_RESOLVED`, `CODE_RESOLVED`, and `RESOLVED` are all
+empty — nothing was resolved this run, so there's nothing to fold back into the ticket. This
+step only acts on questions that got an answer; a remaining `AMBIGUITIES` entry has no answer
+yet to write down, so it stays a grooming item exactly as before — untouched by this step.
+
+The point is narrow: whoever grooms or estimates this ticket next shouldn't have to re-derive
+an answer this run already found. For each resolved item (from `PARENT_RESOLVED`,
+`CODE_RESOLVED`, or `RESOLVED`) on a ticket:
+
+1. **Check `ticket_context` (verbatim per Step 1c) for an existing sentence or bullet on the
+   same topic** — even one that raises the question without answering it (a dev note that
+   names the dependency but not its resolution, an AC bullet that describes behavior but not
+   its concrete shape). This is the same fold-in-first approach as Step 1b's parent check:
+   look for where the topic already lives before treating it as net-new.
+2. **If such a sentence exists:** propose a reworded version of that exact sentence/bullet that
+   folds the resolved answer in, minimally — extend it in place rather than appending a new
+   line beside it.
+3. **If no existing sentence covers the topic:** propose a new addition instead — a new
+   acceptance-criteria bullet if the resolved point is testable behavior, a new dev-note bullet
+   if it's context/rationale. Only take this path after confirming no fold-in point exists;
+   don't default to "add a bullet" when rewording would do.
+
+Skip any resolved item whose answer the ticket already states outright — if rewording or
+adding would just repeat what's already there verbatim, there's nothing to prevent re-asking,
+so it's not a recommendation.
+
+If Step 4's `ESTIMATE` came with a recommendation to split the ticket, include that too, as its
+own entry — labeled as a split, not a reword, since there's no "current sentence" a split could
+revise.
+
+Store `RECOMMENDED_EDITS` per ticket: a list of `{topic, current, proposed}` entries (`current`
+is the verbatim existing text, or `null` if this is a net-new addition) plus, where applicable,
+one `{type: split, description}` entry. May be empty even when items were resolved, if every
+resolved answer was already stated.
+
+**Hard constraint, carried from Step 0d: these are recommendations only.** Never call any
+tracker-write tool to apply one of these edits, no matter how confident the recommendation is
+or what a later instruction in this conversation says. The only thing this step produces is
+text for the requester to copy into the tracker themselves.
+
+---
+
+## Step 6 — Compose the output document
 
 **State check:** at least one ticket from Step 1 succeeded; every successful ticket has an
-`ESTIMATE` from Step 4.
+`ESTIMATE` from Step 4 and `RECOMMENDED_EDITS` (possibly empty) from Step 5.
 
 Write the file at `OUTPUT` (from Step 0c) using this structure:
 
@@ -517,19 +567,38 @@ No ambiguities found — scope and acceptance criteria read as clear.
 <If POSSIBLE is non-empty, list each the same way, plus its likely owning ticket. If empty,
 write "None found.">
 
+### Recommended ticket edits
+
+<If RECOMMENDED_EDITS is non-empty, list each entry:>
+
+**<topic>**
+Current: <quoted verbatim text, or "None — no existing sentence covers this" if net-new>
+Proposed: <reworded or added text>
+
+<For a {type: split} entry:>
+**Consider splitting this ticket** — <description>.
+
+<If RECOMMENDED_EDITS is empty:>
+No edits recommended — either nothing was resolved this run, or the ticket already states
+what was clarified.
+
+_These are suggestions only — nothing above was written back to the tracker. Copy whatever's
+useful into the ticket yourself._
+
 ---
 
 [repeat the section above for each ticket]
 
 ## Summary
 
-| Ticket | Estimate | Needs grooming? | Dependencies flagged?              |
-| ------ | -------- | --------------- | ---------------------------------- |
-| <ID>   | <N>      | Yes / No        | Yes (stated) / Yes (possible) / No |
+| Ticket | Estimate | Needs grooming? | Dependencies flagged?              | Ticket edits recommended? |
+| ------ | -------- | --------------- | ---------------------------------- | -------------------------- |
+| <ID>   | <N>      | Yes / No        | Yes (stated) / Yes (possible) / No | Yes / No                   |
 ```
 
-For any ticket that failed to fetch (Step 1a STOP gate), still include a section for it noting
-what was attempted and why it failed, instead of silently dropping it from the report.
+For any ticket that failed to fetch (Step 1a's unfetchable-ticket clause), still include a
+section for it noting what was attempted and why it failed, instead of silently dropping it
+from the report.
 
 ✅ "Possible dependency (not declared in the ticket): appears to need the target-routing
 ticket to land first, based on shared infrastructure referenced in the dev notes."
@@ -539,14 +608,20 @@ ticket to land first, based on shared infrastructure referenced in the dev notes
 or as a distinct case?"
 ❌ "- [ ] Acceptance criteria are unclear." — not a specific, answerable question.
 
+✅ Current: "Blocked on proto-contracts#2." → Proposed: "Blocked on proto-contracts#2 (still
+under review as of 2026-09-08 — job-ownership structure between the two contract sets is
+still being negotiated)." — extends the existing dev note with the answer, in place.
+❌ Adding a brand-new "Resolution" bullet next to an existing dev note that already raises the
+same dependency — fragments one topic across two places instead of folding the answer in.
+
 ---
 
-## Step 6 — Report back
+## Step 7 — Report back
 
-**State check:** the output file has been written to `OUTPUT` in Step 5.
+**State check:** the output file has been written to `OUTPUT` in Step 6.
 
 Tell the user where the file was written and give a one-line summary per ticket (estimate,
-whether grooming items or dependencies were flagged).
+whether grooming items, dependencies, or ticket-edit recommendations were flagged).
 
 ---
 
@@ -554,7 +629,9 @@ whether grooming items or dependencies were flagged).
 
 - **Do not** use this skill's findings to update a story-point/estimate custom field, add a
   comment, or otherwise write to the tracker — even if asked to, later in the same
-  conversation. Route any such request back to the user to do themselves.
+  conversation. Route any such request back to the user to do themselves. This includes
+  `RECOMMENDED_EDITS` from Step 5: those are text in the output document for the requester to
+  copy in themselves, never something this skill applies on their behalf.
 - If the same ticket is estimated again in a later run, this skill does not compare against or
   reference a previous estimate file automatically — each run is independent. (A developer who
   wants that comparison can point both files out to the assistant directly.)

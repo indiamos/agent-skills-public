@@ -2,6 +2,12 @@
 
 ## 2026-09-08
 
+- New step (5) recommends ticket-text edits for anything resolved this
+  run — via the parent, the codebase, or the requester — so the same
+  question doesn't have to be re-answered at the next grooming or
+  estimate. Prefers rewording an existing sentence/bullet in place over
+  bolting on a new one, and flags split recommendations separately
+  since there's no sentence to reword for those.
 - Fixed a real bug found in testing: after the requester answered grooming
   questions, the skill moved straight to estimating without checking whether
   they were actually done — a reply isn't the same as a go-ahead. Step 3 now
