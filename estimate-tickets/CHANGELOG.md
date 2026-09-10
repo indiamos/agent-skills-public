@@ -2,6 +2,22 @@
 
 ## 2026-09-08
 
+- Reworked when Step 4 recommends splitting an 8, after finding in
+  practice that splitting a two-risk ticket along risk-count alone (one
+  risk per half) can produce two tickets each still gated on the exact
+  same unresolved thing the original was — relabeled, not reduced. Now
+  forks on *why* the ticket is an 8 before picking a test: risk-stacked
+  8s go through an actionability test (a durability tier — untouched /
+  call-site-only / not durable — plus a materiality floor, so a
+  durable-but-1-point piece becomes a prep-work note instead of a second
+  ticket); breadth-driven 8s (no risk dependency, just mechanical scope)
+  go through a value-boundary test instead, since actionability is
+  vacuous when nothing was blocked to begin with.
+  Reviewability/parallelization/milestone reasons to split get their own
+  process-note track that never changes the estimate. Fixed a related
+  bug this surfaced: Step 5 would silently drop a split recommendation
+  on a ticket where nothing else needed grooming. Research and rubric
+  redraft by Perplexity; sources added to README > Acknowledgments.
 - New step (5) recommends ticket-text edits for anything resolved this
   run — via the parent, the codebase, or the requester — so the same
   question doesn't have to be re-answered at the next grooming or

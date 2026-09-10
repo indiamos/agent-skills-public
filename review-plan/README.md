@@ -14,7 +14,7 @@ Companion skill: `commit-plan` performs the after-the-fact reconstruction; this 
 /review-plan <path-to-plan-file>
 ```
 
-Reads the plan, checks it against an eleven-item checklist, and — if any item fails — presents the full checklist plus drafted rewrites for review. Nothing is written until you approve (`yes` / `no` / `select`).
+Reads the plan, checks it against the full commit-mechanics checklist — including whether any commit message already drafted in the plan actually complies with the convention it states — and, if any item fails, presents the full checklist plus a complete revised version of the plan, written to a `<plan>.reviewed.<ext>` sibling file so you can compare it side-by-side against the original. Nothing is written to the original plan until you approve (`yes` / `no` / `select`).
 
 If the plan is single-task or produces no committed changes, the skill reports that the check doesn't apply and halts.
 

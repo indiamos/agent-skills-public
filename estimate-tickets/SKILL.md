@@ -22,7 +22,7 @@ reference.
 
 ### 0★. Tracker availability
 
-Do not check every tracker MCP up front — only check the ones actually needed once ticket
+Do not check every tracker MCP up front — check only the ones actually needed once ticket
 references are resolved (Step 0b). This step just records what happens to already be
 available in the current tool list, so Step 0b doesn't have to repeat the check per ticket:
 
@@ -160,7 +160,7 @@ ambiguities this step flags — a subagent here only fetches and flags, it doesn
 
 **Read-only access — include this constraint verbatim in every subagent prompt:**
 
-> CRITICAL — READ-ONLY ACCESS. Only call read/get/list operations against the tracker
+> CRITICAL — READ-ONLY ACCESS. Call only read/get/list operations against the tracker
 > (Linear, Jira, GitHub, Shortcut). Do not call any tool that creates, updates, comments on,
 > or otherwise modifies a ticket, including setting an estimate or story-point field — this
 > skill's entire purpose depends on never writing to the tracker. If retrieving a piece of
@@ -256,7 +256,7 @@ title/description." Never present an inferred dependency as if the ticket stated
   it — a contract still under review, a spec not finalized, a decision the owning team hasn't
   made yet.
 
-Apply this test: if the estimate would drop the moment the dependency merges or lands, with no
+Apply this test: if the estimate would drop the moment the dependency merges, with no
 other change, it's sequencing, not risk — a ready-state fact, not a complexity fact. Only risk
 carries weight in Step 4's estimate.
 
@@ -392,7 +392,7 @@ questions is not the same as being done — the requester may still be mid-thoug
 add more context, or may have follow-up questions of their own about what you found. Don't
 treat a substantive-looking reply as an implicit go-ahead. After incorporating whatever they
 said, check in explicitly: "Anything else on these, or should I go ahead and estimate?" and wait
-for a real answer. Only proceed to Step 4 once the requester gives an explicit go-ahead ("that's
+for a real answer. Proceed to Step 4 only once the requester gives an explicit go-ahead ("that's
 all," "go ahead," "proceed," etc.) — not merely because they replied. If they give more
 clarification instead, incorporate it the same way (updating `RESOLVED`/`AMBIGUITIES`, and
 re-running Step 2's codebase check on anything new worth checking) and ask again. This can
@@ -410,8 +410,84 @@ bound per ticket from Step 1; `CODE_RESOLVED` is bound per ticket from Step 2 (e
 skipped); `RESOLVED` is bound per ticket from Step 3 (empty if skipped).
 
 Use only these five values: **1, 2, 3, 5, 8**. If a ticket's true scope reads larger than an 8,
-still return 8, but say explicitly that it should be split, and suggest where the split line
-is. Never return 13 or higher.
+still return 8, but say explicitly that it should be split — subject to the tests below — and
+suggest where the split line is. Never return 13 or higher.
+
+**Deciding whether to recommend a split — three separate tests, not one.** First identify *why*
+the ticket reads as an 8, using the `risk`-classified dependencies from Step 1c and the
+ticket's own scope signals (files/services touched, infra blast radius it names):
+
+- **Risk-stacked** — the 8 comes from stacked `risk` dependencies. Apply the **actionability
+  test** below.
+- **Breadth-driven** — the 8 comes from mechanical scope (many files/services, infra blast
+  radius) with no `risk` dependency behind it. Apply the **value-boundary test** below.
+- **Mixed** — both are present. Run the actionability test against the risk portion first; only
+  if it finds no valid split, separately run the value-boundary test against the breadth
+  portion.
+
+*Actionability test (risk-stacked 8s).* A split pays for itself only if some resulting piece
+clears both gates below — not just a piece with fewer risks by count:
+
+1. **Durability gate** — classify the piece by how much of it would survive the dependency
+   resolving, using these tiers instead of a gut call about what's "likely":
+   - *Tier 0 — untouched.* The piece's logic never touches the unresolved surface at all.
+   - *Tier 1 — call-site only.* Built against the dependency's current draft; if the draft
+     shifts, only the call site/adapter needs rework, not the piece's internal design.
+   - *Tier 2 — not durable.* The piece's core design, data model, or control flow depends on
+     how the unresolved thing resolves.
+   Only Tier 0 or Tier 1 clears this gate. A piece stuck at Tier 2 never clears it, however few
+   risks it carries relative to the whole ticket.
+2. **Materiality gate** — estimated on its own, would that Tier 0/1 piece be at least a 2
+   (touches more than one place, or needs a small judgment call), not a 1-point stub?
+
+- Some piece clears both gates → recommend the split; name the piece and its tier.
+- Every piece is stuck at Tier 2 → don't split. The number stays at 8, however many pieces
+  there'd be.
+- A piece clears the durability gate but not materiality (Tier 0/1, but sub-2 in size) → don't
+  recommend a split. Call it out instead as a **prep-work item** — work the assignee can start
+  today inside the still-8 ticket — not a reason to open a second ticket.
+
+*Value-boundary test (breadth-driven 8s).* Mechanical breadth alone never justifies a split —
+every piece of a pure-breadth 8 is already actionable today, so the actionability test above is
+vacuous here (nothing was blocked to begin with). Ask instead whether the ticket decomposes
+along a boundary where each resulting piece is independently valuable and shippable on its own
+— a genuine vertical slice, not an arbitrary chunk of the same work. Splitting a file list in
+half by position is not that; splitting along a real business-rule or data variation (a region,
+an entity type, a user-facing path) is.
+
+*Process-driven note (Gate C — never changes the estimate).* Reviewability, parallelizing
+across two engineers, or giving a PM a shippable milestone are real reasons a team might still
+want to cut a ticket up — but they're delivery-process calls this skill can't see (team
+headcount, review norms), not changes to the estimate's uncertainty. When the ticket's own
+dependency structure makes one visible — e.g. two risk dependencies affecting clearly disjoint
+sets of endpoints/paths, even though every resulting piece would stay gated on the same root
+cause — name it as a separate, explicitly labeled note. Never let it change `ESTIMATE`, and
+never present it as satisfying the actionability test.
+
+✅ Splitting "submit a run" (org-scoping logic + an HTTP handler built against the gRPC
+contract's current draft — Tier 1, and a 2+ on its own) from "query run status/results" (Tier 2
+— nothing about a result's shape is defined yet) — the submit piece is genuinely more
+actionable than the whole ticket was.
+❌ Splitting that same "status/results" piece again into "status" and "results" because status
+carries only one of its two risks — both are still Tier 2 against the same open contract
+review. Nothing new becomes actionable, only the label changes. Leave it at 8.
+✅ The same ticket also needs a one-line feature-flag addition — Tier 0, but a 1-point stub.
+Don't split it into its own ticket; call it a prep-work bullet the assignee can knock out today.
+❌ A "rename `orgId` to `organizationId` across 40 call sites" ticket, an 8 purely from blast
+radius with no risk dependency, split into "first 20 files" / "last 20 files" — the halves
+differ only by list position; each is exactly as actionable and reviewable as the whole.
+✅ A "migrate billing to the new tax engine" ticket, also breadth-driven, split into "US tax
+rules" and "EU tax rules" — each ships and reviews independently; the boundary is a real data
+variation, not an arbitrary cut.
+✅ A ticket has two risk dependencies that happen to gate disjoint parts of its own scope (say,
+one gates the write path, the other gates the read path) — both pieces stay Tier 2, so no
+split is warranted, but it's worth noting in Step 6, separately from the estimate: "once both
+contracts merge, the write and read paths could ship as separate PRs" — labeled a process note,
+not a split, and the estimate stays 8.
+
+Store `SPLIT_ANALYSIS` per ticket: `{source: risk-stacked|breadth-driven|mixed|none, verdict:
+split|prep-work|process-note|none, detail}`, where `detail` is the one- or two-sentence
+justification used above.
 
 **Scale anchors** (calibrate every estimate against these, not against gut feel):
 
@@ -421,11 +497,11 @@ is. Never return 13 or higher.
 | **2** | Mechanical, but touches more than one place, or requires a small judgment call about what to keep vs. change. Still no real unknowns.                                                                                                              |
 | **3** | Mechanical work plus a genuine first-time-tooling or unfamiliar-system learning curve, and/or a verification loop (lint, tests, config validation) that commonly takes a couple of iterations. No open design decisions, no cross-team dependency. |
 | **5** | Real investigation or design ambiguity, a correctness/security-sensitive component with unknown-depth review, or **one genuine risk dependency** (its shape could still change) — but still fits in one bounded PR once that risk resolves.       |
-| **8** | Multiple unresolved external decisions, production/infra blast radius, or **several independent risk dependencies** stacked together — genuine uncertainty about what more than one thing will look like, not just when things will land.        |
+| **8** | Multiple unresolved external decisions, production/infra blast radius, or **several independent risk dependencies** stacked together — genuine uncertainty about what more than one thing will look like, not just when things will merge.       |
 
 **Sequencing vs. risk — apply this before letting any dependency touch the score:** a
-dependency only earns weight in the estimate if it's classified `risk` in Step 1c. The test is
-the one from that step: if the estimate would drop the moment the dependency merges or lands,
+dependency earns weight in the estimate only if it's classified `risk` in Step 1c. The test is
+the one from that step: if the estimate would drop the moment the dependency merges,
 with no other change, it was never actually that number — it's sequencing, a ready-state fact,
 not a complexity fact. Stacking any number of `sequencing` dependencies never earns a 5 or an 8
 by itself; list them in the Dependencies section (Step 6) for planning, but don't cite them here.
@@ -461,18 +537,23 @@ and is the reason this is a 5, not a 3."
 ❌ "Blocked on two things, so this is an 8." — stacks dependency count as if it were
 uncertainty, without checking whether either dependency is actually still undefined.
 
-Store `ESTIMATE` and `ESTIMATE_REASONING` per ticket.
+Store `ESTIMATE` and `ESTIMATE_REASONING` per ticket (`SPLIT_ANALYSIS` was already stored
+above, where applicable).
 
 ---
 
 ## Step 5 — Recommend ticket edits to prevent re-asking
 
 **State check:** `ticket_context` is bound per ticket from Step 1; `PARENT_RESOLVED` is bound
-from Step 1, `CODE_RESOLVED` from Step 2, `RESOLVED` from Step 3 (each may be empty).
+from Step 1, `CODE_RESOLVED` from Step 2, `RESOLVED` from Step 3 (each may be empty);
+`SPLIT_ANALYSIS` is bound per ticket from Step 4.
 
 Skip this step for any ticket where `PARENT_RESOLVED`, `CODE_RESOLVED`, and `RESOLVED` are all
-empty — nothing was resolved this run, so there's nothing to fold back into the ticket. This
-step only acts on questions that got an answer; a remaining `AMBIGUITIES` entry has no answer
+empty **and** `SPLIT_ANALYSIS.verdict` is `none` — nothing was resolved this run and there's no
+split/prep-work/process note to record, so there's nothing to fold back into the ticket. If
+only `SPLIT_ANALYSIS.verdict` is non-`none`, still run this step for that one entry (steps 1–3
+below simply have no resolved items to iterate over). This step acts only on questions that got
+an answer, plus whatever `SPLIT_ANALYSIS` found; a remaining `AMBIGUITIES` entry has no answer
 yet to write down, so it stays a grooming item exactly as before — untouched by this step.
 
 The point is narrow: whoever grooms or estimates this ticket next shouldn't have to re-derive
@@ -489,21 +570,23 @@ an answer this run already found. For each resolved item (from `PARENT_RESOLVED`
    line beside it.
 3. **If no existing sentence covers the topic:** propose a new addition instead — a new
    acceptance-criteria bullet if the resolved point is testable behavior, a new dev-note bullet
-   if it's context/rationale. Only take this path after confirming no fold-in point exists;
+   if it's context/rationale. Take this path only after confirming no fold-in point exists;
    don't default to "add a bullet" when rewording would do.
 
 Skip any resolved item whose answer the ticket already states outright — if rewording or
 adding would just repeat what's already there verbatim, there's nothing to prevent re-asking,
 so it's not a recommendation.
 
-If Step 4's `ESTIMATE` came with a recommendation to split the ticket, include that too, as its
-own entry — labeled as a split, not a reword, since there's no "current sentence" a split could
-revise.
+If Step 4's `SPLIT_ANALYSIS` has a `verdict` other than `none`, include that too, as its own
+entry — labeled by its verdict (`split`, `prep-work`, or `process-note`), not a reword, since
+there's no "current sentence" any of these three could revise. Keep the three verdicts visibly
+distinct in what gets written — a `prep-work` or `process-note` entry must never be phrased as
+if it recommends splitting the ticket, since neither one does.
 
 Store `RECOMMENDED_EDITS` per ticket: a list of `{topic, current, proposed}` entries (`current`
 is the verbatim existing text, or `null` if this is a net-new addition) plus, where applicable,
-one `{type: split, description}` entry. May be empty even when items were resolved, if every
-resolved answer was already stated.
+one `{type: split|prep-work|process-note, description}` entry taken from `SPLIT_ANALYSIS`. May
+be empty even when items were resolved, if every resolved answer was already stated.
 
 **Hard constraint, carried from Step 0d: these are recommendations only.** Never call any
 tracker-write tool to apply one of these edits, no matter how confident the recommendation is
@@ -578,6 +661,12 @@ Proposed: <reworded or added text>
 <For a {type: split} entry:>
 **Consider splitting this ticket** — <description>.
 
+<For a {type: prep-work} entry:>
+**Prep-work available now (not a split)** — <description>.
+
+<For a {type: process-note} entry:>
+**Process note — does not change the estimate** — <description>.
+
 <If RECOMMENDED_EDITS is empty:>
 No edits recommended — either nothing was resolved this run, or the ticket already states
 what was clarified.
@@ -601,7 +690,7 @@ section for it noting what was attempted and why it failed, instead of silently 
 from the report.
 
 ✅ "Possible dependency (not declared in the ticket): appears to need the target-routing
-ticket to land first, based on shared infrastructure referenced in the dev notes."
+ticket to merge first, based on shared infrastructure referenced in the dev notes."
 ❌ "This ticket might depend on other work." — no specific ticket named, no reasoning given.
 
 ✅ "- [ ] What should happen when the org header is present but empty — treated as absent,

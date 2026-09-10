@@ -52,11 +52,13 @@ Output filenames include a timestamp and the ticket ID(s)—e.g., `2026-08-14-11
 | 2 | Mechanical but touches more than one place, or needs a small judgment call. |
 | 3 | Mechanical plus a first-time-tooling learning curve or a lint/test/config verification loop. No open design decisions. |
 | 5 | Real investigation or design ambiguity, a correctness/security-sensitive area, or one genuine *risk* dependency (its shape could still change)—but potentially still one bounded PR. |
-| 8 | Multiple unresolved external decisions, infra blast radius, or several independent *risk* dependencies stacked together; flag for splitting into smaller slices. |
+| 8 | Multiple unresolved external decisions, infra blast radius, or several independent *risk* dependencies stacked together; flag for splitting into smaller slices—but only when a split actually unlocks something, see below. |
 
 Every estimate includes why that number was chosen and not the ones adjacent to it.
 
-**Dependencies only count if they're a genuine risk, not just a wait.** A dependency whose shape is already fully defined and just hasn't merged/landed yet is *sequencing*—it's a scheduling fact, not a complexity fact, and doesn't raise the score no matter how many of them stack up. A dependency whose contract, spec, or decision is still unsettled is *risk*, and that's what actually earns a 5 or 8. Both kinds are still listed in the Dependencies section for planning purposes; sequencing ones are just called out as not affecting the number.
+**Dependencies count only if they're a genuine risk, not just a wait.** A dependency whose shape is already fully defined and just hasn't merged yet is *sequencing*—it's a scheduling fact, not a complexity fact, and doesn't raise the score no matter how many of them stack up. A dependency whose contract, spec, or decision is still unsettled is *risk*, and that's what actually earns a 5 or 8. Both kinds are still listed in the Dependencies section for planning purposes; sequencing ones are just called out as not affecting the number.
+
+**A split recommendation has to name what becomes actionable, not just count risks.** First identify why the ticket is an 8: *risk-stacked* (driven by stacked risk dependencies) or *breadth-driven* (mechanical scope, no risk dependency). For a risk-stacked 8, split only when some resulting piece clears two gates: it's durable (its logic either never touches the unresolved surface, or only its call site would need rework if that surface shifts—not its core design) and material (that durable piece would be at least a 2 on its own, not a 1-point stub). Cutting a two-risk 8 into two one-risk pieces that are both still gated on the exact same unresolved thing doesn't clear the durability gate—that's relabeling the wait with smaller numbers, not reducing it. A durable piece too small to be its own ticket becomes a prep-work note instead of a split. For a breadth-driven 8, actionability is beside the point (nothing was blocked); split only along a genuine vertical boundary—a business-rule or data variation each piece could ship and review on its own—never an arbitrary chunk of the same work. Reviewability, parallelizing across engineers, or a PM milestone are real but separate reasons to cut up a ticket; when the ticket's own structure surfaces one, it's called out as a process note that never changes the number.
 
 ---
 
@@ -70,6 +72,10 @@ This skill is licensed under [Creative Commons Attribution 4.0 International](ht
 
 ## Acknowledgments
 
+- [The Humanizing Work Guide to Splitting User Stories](https://www.agileforall.com/patterns-for-splitting-user-stories/)
+- Tech Lead Handbook, [Feature slicing](https://techleadhandbook.org/agile/feature-slicing/)
+- Bill Wake, [Twenty Ways to Split Stories](https://xp123.com/articles/twenty-ways-to-split-stories/)
+- Mike Cohn, [SPIDR: Five Simple but Powerful Ways to Split User Stories](https://www.mountaingoatsoftware.com/agile/five-simple-but-powerful-ways-to-split-user-stories)
 - <https://github.com/afbreilyn/afb-tdd>
 - <https://github.com/github/spec-kit>
 - <https://github.com/ianmcnally/code-reviewer>
