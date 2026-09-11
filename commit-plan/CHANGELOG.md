@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-09-11
+
+- Writes the plan file directly instead of asking for confirmation every time; only prompts (via a choice between overwriting or picking a different path) when a file already exists at the target path
+
 ## 2026-08-14
 
 - Generalized ticket-number extraction wording from "Jira ticket number" to "ticket ID" (tracker-agnostic)

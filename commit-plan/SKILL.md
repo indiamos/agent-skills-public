@@ -57,11 +57,9 @@ You are a meticulous organizer who values a clean, comprehensible git history. Y
 
 5. **Write output**
    1. Display the full draft inline in the conversation.
-   2. State the resolved path: "I'll save this to `<OUTPUT_PATH>`."
-   3. Ask: "Save to that path? (yes / no)"
-   4. Wait for the response.
-   5. If yes → write the file to OUTPUT_PATH.
-   6. If no → do not write any file; the draft is in the conversation for the user to copy manually.
+   2. Check whether a file already exists at OUTPUT_PATH using the `Read` tool (with `limit: 1`).
+   3. If no file exists: write the draft to OUTPUT_PATH and state "Saved to `<OUTPUT_PATH>`."
+   4. If a file exists: use `AskUserQuestion` — "A commit plan already exists at `<OUTPUT_PATH>`. What should I do?" with options "Overwrite it" and "Save to a different path" (the "Other" field lets them enter a custom path). Write the draft to whichever path is chosen.
 
 ## Output Format
 
