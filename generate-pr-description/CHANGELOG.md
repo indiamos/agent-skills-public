@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-12
+
+- File-output filename now slugifies `BRANCH` (slashes replaced with hyphens) before appending `-pr-description.md`, so a branch like `ia/stride-240/connect-migration` no longer creates nested directories under `PR_DESC_OUTPUT_DIR`
+- Added halt-on-failure clauses to the `git rev-parse`, `git fetch`, `git diff`, and `git log` commands in Step 0 and Required input artifacts — a failed command now halts with an error instead of silently proceeding with a stale or missing value
+- Added a STOP gate for ticket fetch failures: if a ticket ID is found but its content can't be fetched, ask the operator whether to proceed without ticket context or resolve access first, and wait for a response before drafting anything
+- Added an optional `## Testing` output section for tests/checks already run and verified; explicitly not for tests that still need to happen
+- Added a `## Surfacing to-dos and security issues` STOP gate: any to-do or security concern found while drafting must be raised to the operator in chat and the response waited for, rather than written into "Notes for reviewers" or "Testing" as a caveat for someone to notice later; to-dos become a follow-up ticket referenced by number, never a task assigned to the reviewer
+- "Notes for reviewers" trigger list narrowed to remove "a non-obvious manual test step" (now covered by `Testing` / the to-dos STOP gate)
+- Added a second ❌ example to the Output format spec showing an untested step and a security concern buried in "Notes for reviewers"
+- "Exclude trivial changes... unless meaningful" skip rule replaced with enumerable criteria (pure reordering, routine lockfile updates, autoformatter-only diffs)
+- Output checklist updated to verify no to-dos/security issues are buried in the artifact
+
 ## 2026-09-01
 
 - Config resolution (`BASE_TICKET_URL`, `TICKET_LABEL`, `PR_DESC_OUTPUT_DIR`, `PR_DESC_DEFAULT_OUTPUT`) now walks up from the filesystem root to CWD, reading `.claude/settings.json` / `.claude/settings.local.json` in every ancestor directory (stopping at the home directory), not just CWD itself. Fixes a config set on a parent folder containing several repos being invisible to a repo nested inside it

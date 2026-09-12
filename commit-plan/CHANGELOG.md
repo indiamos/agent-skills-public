@@ -2,7 +2,7 @@
 
 ## 2026-09-11
 
-- Writes the plan file directly instead of asking for confirmation every time; only prompts (via a choice between overwriting or picking a different path) when a file already exists at the target path
+- Writes the plan file directly instead of asking for confirmation every time; prompts only when a file already exists at the target path (via a choice between overwriting or picking a different path)
 
 ## 2026-08-14
 
