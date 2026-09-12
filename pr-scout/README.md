@@ -67,15 +67,19 @@ See also the companion skill `/pr-scout.ask`, which tries to reframe AI's typica
 
 ### You can see findings Claude is not so sure about
 
-This skill runs six specialist agents (bugs, `CLAUDE.md` compliance, git history, previous comments, code comments, struct invariants) and then scores every finding with a separate Haiku agent. Some skills will filter out any comment the agent is less than 80% sure of, and they will never show you the others unless you ask for the deep cuts.
+This skill runs six specialist agents (bugs, `CLAUDE.md`/`PR-AGENT.md`/`copilot-instructions.md` compliance, git history, previous comments, code comments and doc drift, struct invariants and test-double fidelity) and then scores every finding with a separate Haiku agent. Some skills will filter out any comment the agent is less than 80% sure of, and they will never show you the others unless you ask for the deep cuts.
 
 But 65 is a passing grade in NYC public schools, so that's the cutoff PR Scout uses! _You_ decide whether to play a hardass teacher.
+
+### It tells you when a PR's tests are thin, without nagging you about it
+
+If a PR skips testing something new it introduces, PR Scout only raises it as a real issue when equivalent existing code elsewhere in the repo *is* tested that way — otherwise it's not fair to hold this PR to a higher bar than the rest of the codebase. In that case, it shows up under a separate `## Questions for the operator` section instead of the main issue list: a suggestion worth a second look, not a scored defect.
 
 ### You _can_ nitpick over commit messages, but it assumes you don't want to
 
 If a repo's owners really care about commit message style, they probably set up a pre-commit hook for it. Never encountered this? That's because most devs don't care _that_ much. But maybe they cared enough to mention in the `CLAUDE.md` file that they follow [Conventional Commits](https://www.conventionalcommits.org/) minus scopes, and you want to make sure the preference is being respected. Maybe you want to check commit message style only on your own PRs but not police others'.
 
-PR Scout checks that proposed changes adhere to `CLAUDE.md` and a [spec-kit](https://github.com/github/spec-kit) constitution file, if the repo has one. That would also include enforcing any commit message preferences that those files contain. Instead, PR Scout skips such rules unless you opt in.
+PR Scout checks that proposed changes adhere to `CLAUDE.md`, a [spec-kit](https://github.com/github/spec-kit) constitution file, a repo-level `PR-AGENT.md`, and `.github/copilot-instructions.md` — whichever of those the repo actually has. That would also include enforcing any commit message preferences those files contain. Instead, PR Scout skips such rules unless you opt in.
 
 ### If GitHub MCP isn't working, PR Scout asks whether you want to continue
 

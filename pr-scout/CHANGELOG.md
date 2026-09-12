@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-09-12
+
+- Step 2 now also discovers `.github/copilot-instructions.md` (`COPILOT_INSTRUCTIONS_PATH`); Agent 1 audits
+  against it the same way as CLAUDE.md/constitution/PR-AGENT.md, with the same quote-verbatim and scoring-cap
+  rules. Reuses whatever repo-specific review guidance already exists for GitHub Copilot instead of requiring
+  a duplicate `PR-AGENT.md`.
+- Agent 2 (bug scan) now also checks build/CI/dependency reproducibility — pinned versions, remote-registry
+  plugin alternatives to a local install, and consistency between CI and documented local-dev setup steps —
+  gated behind a new `TOOLING_FILES_TOUCHED` flag so it only fires when the diff touches `Makefile`,
+  `.github/workflows/**`, or a dependency lock/manifest file.
+- Agent 5 (code comments) now also checks the PR description and modified README/prose docs against the diff
+  at `COMMIT_SHA`, flagging claims (a described approach, a setup step, a referenced path) the current diff no
+  longer supports.
+- Agent 6 (struct invariants) now also checks test-double fidelity: any fake/mock/stub added or modified by
+  the PR must accept every arm of a `oneof`/enum the real message defines, and any round-trip assertion must
+  check the specific field under test rather than an unrelated one (e.g. an ID).
+- Agent 6 now also flags missing test coverage for new behavior the PR introduces (new codec, transport,
+  protocol branch, field) — but only as a real issue if equivalent existing code in the repo has comparable
+  coverage (verified via `Grep` before flagging). If the repo doesn't test that kind of thing anywhere else
+  either, it's returned as a non-scored `type: question` instead — a suggestion for the operator, not a
+  defect — surfaced in its own `## Questions for the operator` output section. Appendix B's blanket "don't
+  flag missing test coverage" exclusion narrowed accordingly.
+- Prompted by `pr-scout` giving a clean bill of health to a PR that Copilot's own review then found ~9 real
+  issues in over several rounds (codegen plugin reproducibility, oneof/test-double fidelity, stale docs) —
+  traced to Appendix B's blanket test-coverage/documentation exclusion plus the target repo having no
+  CLAUDE.md/PR-AGENT.md for Agent 1 to audit against.
+- Self-audit via `/improve-skill` on the above changes caught three regressions before they shipped: (1)
+  `TOOLING_FILES_TOUCHED` was referenced in Step 4 but never actually bound anywhere — moved its computation
+  into Step 3's existing Haiku agent (which already has the changed-file list in context) instead of leaving
+  it as an uncomputable "compute this" instruction to the orchestrator; (2) Step 5's scoring-agent "receives"
+  list omitted `COPILOT_INSTRUCTIONS_PATH`, so the scoring rule requiring agents to double-check that file's
+  content had no way to do so — added it to the list; (3) the new `## Questions for the operator` output
+  section's placement relative to the GitHub footer was ambiguous — clarified it renders after the footer,
+  matching how `## Commit message notes` already handles this.
+
 ## 2026-08-20
 
 - Agent 2 (bug scan) now also checks for fail-open authorization/security guards (a
