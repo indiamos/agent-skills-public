@@ -413,6 +413,15 @@ Use only these five values: **1, 2, 3, 5, 8**. If a ticket's true scope reads la
 still return 8, but say explicitly that it should be split — subject to the tests below — and
 suggest where the split line is. Never return 13 or higher.
 
+If a sibling file named `SKILL.<company>.md` exists in this skill's directory, check it now: a
+company rider may define a different client-facing point scale. When one does, keep reasoning
+against the canonical five tiers below exactly as written — the anchors, the split tests, and
+every "why not one notch lower/higher" judgment are about tier position, not about the numbers
+1/2/3/5/8 themselves. Only translate the final chosen tier to the rider's scale, using its
+mapping table, when storing `ESTIMATE` and when composing Step 6's output. Everywhere else in
+this skill — including this step's own prose — "8" means "the top tier, flag for split" and
+should be read as the rider's top value where one applies.
+
 **Deciding whether to recommend a split — three separate tests, not one.** First identify *why*
 the ticket reads as an 8, using the `risk`-classified dependencies from Step 1c and the
 ticket's own scope signals (files/services touched, infra blast radius it names):
@@ -614,7 +623,7 @@ Write the file at `OUTPUT` (from Step 0c) using this structure:
 **Tracker**: <Linear / Jira / GitHub / Shortcut / other>
 **URL**: <fully qualified ticket URL>
 
-### Estimate: <N> (Fibonacci)
+### Estimate: <N> (Fibonacci, or the rider's scale label if a company rider applied)
 
 <reasoning — the concrete reasons, why not N-1, why not N+1>
 

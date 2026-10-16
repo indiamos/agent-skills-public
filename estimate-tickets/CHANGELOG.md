@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-16
+
+- Added a company-rider hook: Step 4 and Step 6 now check for a sibling
+  `SKILL.<company>.md` that defines a different client-facing point scale,
+  and translate the final tier into it at output time while leaving the
+  canonical 1/2/3/5/8 rubric, split tests, and examples untouched. Added
+  the first such rider, for a client using a non-Fibonacci scale.
+
 ## 2026-09-08
 
 - Reworked when Step 4 recommends splitting an 8, after finding in

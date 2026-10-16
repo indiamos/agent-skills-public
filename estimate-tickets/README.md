@@ -60,6 +60,10 @@ Every estimate includes why that number was chosen and not the ones adjacent to 
 
 **A split recommendation has to name what becomes actionable, not just count risks.** First identify why the ticket is an 8: *risk-stacked* (driven by stacked risk dependencies) or *breadth-driven* (mechanical scope, no risk dependency). For a risk-stacked 8, split only when some resulting piece clears two gates: it's durable (its logic either never touches the unresolved surface, or only its call site would need rework if that surface shifts—not its core design) and material (that durable piece would be at least a 2 on its own, not a 1-point stub). Cutting a two-risk 8 into two one-risk pieces that are both still gated on the exact same unresolved thing doesn't clear the durability gate—that's relabeling the wait with smaller numbers, not reducing it. A durable piece too small to be its own ticket becomes a prep-work note instead of a split. For a breadth-driven 8, actionability is beside the point (nothing was blocked); split only along a genuine vertical boundary—a business-rule or data variation each piece could ship and review on its own—never an arbitrary chunk of the same work. Reviewability, parallelizing across engineers, or a PM milestone are real but separate reasons to cut up a ticket; when the ticket's own structure surfaces one, it's called out as a process note that never changes the number.
 
+## Company riders
+
+If a client's own pointing scale isn't Fibonacci, a sibling `SKILL.<company>.md` file (not synced publicly) can define a mapping to a different scale—e.g., a 1/3/10/30/100 scale with 100 as the split threshold. Estimating still happens against the five canonical tiers above and their anchors, split tests, and reasoning; only the final number is translated into the client's scale at output time, so the rubric itself never has to be reinterpreted per client.
+
 ---
 
 ## Feedback
